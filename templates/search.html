@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+    {% block script %}
+<script>
+
+$(document).ready(function(){
+	loadPostContainer("swiv-container")		
+		 
+})
+
+
+</script>
+    {% endblock script %}
+{% block content %}
+			
+	<div class="row">
+		<div class="col-sm-12">
+				{% if request.GET.q %}
+					<p class="lead"> Results for {{request.GET.q}} </p>
+				{% endif %}
+		</div>
+		
+	<div class="col-sm-9" >
+		<h2>Feeds</h2>
+		<hr/>
+			
+			<div id="swiv-container" data-url='/api/search/'>
+	
+			</div>
+			<a href="#" id="loadmore"> Load More</a>
+	
+	</div>
+	<div class="col-sm-3 ">
+			<h2>Users</h2>
+			<hr/>
+			{% for users in users %}
+				<a href='/{{ user.username}}/'>{{ user.username}}</a><br/>
+			{% endfor %}
+		</div>
+</div>
+{% endblock content %}
+ col-sm-xs-12

@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% load recommended %}
+    {% block script %}
+}
+<script>
+
+$(document).ready(function(){
+	loadPostContainer("swiv-container")		
+		 
+})
+
+
+</script>
+    {% endblock script %}
+{% block content %}
+			
+	<div class="row">
+		<div class="col-sm-3 col-sm-xs-12">
+			<h1>{{ request.user}}	</h1>
+			<br/>
+			<p class="lead">Recommended Users</p>
+			<hr/>
+        	{% recommended request.user %}
+
+		</div>
+	<div class="col-sm-9" >
+			{% if not request.GET.q %}
+			<div >
+				{% include "swiv/form.html" with form=create_form action_url=create_url btn_title="Swiv" form_class="post-form" %}
+			</div>
+				<hr/>
+			{% endif %}
+			<div id="swiv-container" data-url='/api/swivapp/'>
+	
+			</div>
+			<a href="#" id="loadmore"> Load More</a>
+	
+	</div>
+</div>
+{% endblock content %}

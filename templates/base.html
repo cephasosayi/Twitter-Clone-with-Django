@@ -1,0 +1,402 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+    <title>{% block title %} Swiv.ng  {% endblock title %}</title>
+
+    <!-- Bootstrap --> 
+   <link href="{% static 'css/bootstrap.min.css'  %}" rel="stylesheet">
+    <!-- <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" -->
+
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+    <style type="text/css">
+      .red-color{
+        color: red;
+      }
+      .grey-color{
+        color: #ccc;
+      }
+      .media-focus{
+        background-color: rgb(255, 255, 0, 0.22);
+      }
+    </style>
+  </head>
+  <body>
+         {% include "navbar.html" %}
+
+    <div class="container">
+
+ 
+      {% block content %}
+      {% endblock content %}
+    </div>
+ {% include "comment-model.html" %}
+    <!--jQuery (necessary for Bootstrap's JavaScript plugins)-->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+    <script>
+        function getParameterByName(name, url) {
+    if (!url) url = window.location.href;
+    name = name.replace(/[\[\]]/g, '\\$&');
+    var regex = new RegExp('[?&]' + name + '(=([^&#]*)|&|#|$)'),
+        results = regex.exec(url);
+    if (!results) return null;
+    if (!results[2]) return '';
+    return decodeURIComponent(results[2].replace(/\+/g, ' '));
+}
+function loadPostContainer(postContainerID, fecthOneId){
+  var query = getParameterByName('q')
+    var swivList = [];
+    var nextPostUrl;  
+    var postContainer;
+    if (postContainerID){
+       postContainer = $("#" + postContainerID)
+
+    }else{
+       postContainer = $("swiv-container")
+    }
+    var initialURL = postContainer.attr("data-url") || "/api/swivapp/";
+
+    $(document.body).on("click", ".post-like", function(e){
+      e.preventDefault()
+      var this_=$(this)
+      var postId = this_.attr("data-id")
+      var LikedUrl = '/api/swivapp/' + postId + "/like/"
+      //this_.text("Liked")
+      $.ajax({
+        method: "GET",
+        url: LikedUrl,
+        success: function(data){
+          if(data.liked){
+            this_.text("Liked")
+          }else{
+            this_.text("Unliked")
+          }
+        },
+        error: function(data){
+          console.log("error")
+         
+        }
+      })
+    })
+//opening of the comments box
+     $(document.body).on("click", ".post-comment", function(e){
+        e.preventDefault()
+        var this_=$(this)
+        var parentId=this_.attr("data-id")
+        var username=this_.attr("data-user")  
+        var content=this_.parent().parent().find(".content").text()
+        $("#commentmodel").modal({})
+        $("#commentmodel textarea").after("<input type='hidden' value='" + parentId + "'name='parent_id'/>")
+        $("#commentmodel textarea").after("<input type='hidden' value='" + true + "'name='comment'/>")
+        $("#commentmodel textarea").val("@" +username+ " ")
+        $("#commentmodel #commentmodelLabel").text(" comment to " + content)
+        $("#commentmodel").on("shown.bs.modal", function(){
+        $("textarea").focus()
+
+        })
+})
+
+    $(document.body).on("click", ".shareBtn", function(e){
+        e.preventDefault()
+        console.log("clicked")
+        var url = "/api" + $(this).attr("href")
+        $.ajax({
+        method: "GET",
+        url: url,
+        success: function (data) {
+          console.log(data)
+        if(initialURL=="/api/swivapp/"){
+           attachPost(data,true, true)
+            updateHashLink()
+                    }
+       
+        },
+        error: function(data){
+          console.log("error")
+          console.log(data)
+        }
+      })
+    })
+
+
+    
+    function updateHashLink(){
+      $(".content").each(function(data){
+        var hashtagRegex = /(^|\s)#([\w\d-]+)/g
+        var usernameRegex = /(^|\s)@([\w\d-]+)/g
+        var currentHtml =$(this).html()
+        var newText;
+
+        newText = currentHtml.replace(hashtagRegex, "$1<a href='/tags/$2/'>#$2</a>")
+        newText = currentHtml.replace(usernameRegex, "$1 @<a href='/$2/'>$2</a>")
+        $(this).html(newText)
+        })
+        }
+
+   // function attachPost(swivValue, prepend, reshare){   
+    //  var dateDisplay = swivValue.date_display
+     // var swivContent = swivValue.content;
+    //  var swivUser = swivValue.user;
+    //  var dataFormatedHTML;
+
+    function formatPost(swivValue) {
+      var verb = 'Like'
+           if (swivValue.did_like){
+          verb = 'Unlike'
+      
+      }
+      var preContent;
+      var container;
+      var swivContent;
+      var comment = swivValue.comment;
+      var commentID = swivValue.id
+      if (swivValue.parent){
+        commentID=swivValue.parent.id
+      }
+      var openingContainerDiv = "<div class=\"media\">"
+      if(swivValue.id== fecthOneId) {
+        openingContainerDiv = "<div class=\"media media-focus\">"
+        setTimeout(function(){
+          $('.media-focus').css("background-color", '#fff')
+        }, 3000)
+      }
+      if (swivValue.parent && !comment){
+       swivValue = swivValue.parent
+        preContent = openingContainerDiv + "<span class='grey-color'>Share by " + swivValue.user.username +" on " + swivValue.date_display + "</span><br/>"
+
+      }else if (swivValue.parent && comment){
+          preContent = openingContainerDiv + "<span class='grey-color'> @"  + swivValue.parent.user.username + " " + "commented" + " at " + "@"+ swivValue.user.username+ " post" +"</span><br/>"
+      }
+         var verb = 'Like'
+         if (swivValue.did_like){
+            verb = 'Unlike'
+       }
+      /* swivContent = swivValue.content + "<br/> via <a href='" + swivValue.user.url + "'>" + swivValue.user.username + "</a> | " + swivValue.date_display + " | " + "<a href='/swivapp/" + swivValue.id + "'>View</a> | " + "<a class='shareBtn' href='/swivapp/" + swivValue.id + "/reshare/'>Share</a>" + " | <a href='#' class='post-like' data-id=" + swivValue.id + ">" + verb + " (" +swivValue.likes + ")</a>" + " | <a href='#' class='post-comment' data-id=" + swivValue.id + ">Comment</a>"*/
+  
+
+        swivContent  = "<span class='content'>" + swivValue.content + "</span><br/> via <a href='" + swivValue.user.url + "'>" + swivValue.user.username+ "</a> | " + swivValue.date_display + " | " + "<a href='/swivapp/" + swivValue.id  + "'>View</a> | " + "<a class='shareBtn' href='/swivapp/" + swivValue.id + "/reshare/'>Share</a>" + " | <a href='#' class='post-like'  data-id=" + swivValue.id  + ">" + verb + " (" + swivValue.likes + ")</a>" + " | <a href='#' class='post-comment' data-user='" + swivValue.user.username +"' data-id=" + commentID+ ">Comment</a>"
+      if (preContent){
+           container= "<div class=\"media-body\">" + preContent + swivContent + "</div></div><hr/>"
+      }else {
+        //fresh post
+           container = "<div class=\"media-body\">" + swivContent + "</div></div><hr/>"
+      }
+
+       return container
+
+       
+  }
+    function attachPost(swivValue, prepend, reshare){
+      dataFormatedHTML = formatPost(swivValue)
+
+
+      //if (reshare && swivValue.parent){
+        //reshare
+       // var mainSwiv = swivValue.parent
+       // dataFormatedHTML = "<div class=\"media\"><div class=\"media-body\"> <span class='grey-color'> " + swivUser.username + " Shares " + mainSwiv.user.username+"'s post" + " on " + dateDisplay + "</span><br/>"+ mainSwiv.content + "<br/> via <a href='" + mainSwiv.user.url + "'>" + mainSwiv.user.username + "</a> | " + mainSwiv.date_display + " | " + "<a href='/swivapp/" + mainSwiv.id + "'>View</a>" +  " | <a  class='shareBtn' href='/swivapp/" + swivValue.id + "/reshare'>Share</a>" + " | <a href='#' class='post-like' data-id=" + swivValue.id + ">"+ verb +" (" + swivValue.likes + ")</a>" +  "</div></div><hr/>" 
+       // }else {
+          //new post
+          //dataFormatedHTML = "<div class=\"media\"><div class=\"media-body\">" + swivContent + "<br/> via <a href='" + swivUser.url + "'>" + swivUser.username + "</a> | " + dateDisplay + " | " + "<a href='/swivapp/" + swivValue.id + "'>View</a>" +  " | <a class='shareBtn' href='/swivapp/" + swivValue.id + "/reshare'>Share</a>" + " | <a href='#' class='post-like' data-id=" + swivValue.id + ">"+ verb +"(" + swivValue.likes + ")</a>"  + "</div></div><hr/>"
+         // } 
+
+      if (prepend==true){       
+      postContainer.prepend(dataFormatedHTML)         
+        
+      }else{
+      postContainer.append(dataFormatedHTML)
+    }
+    }
+
+    function perseSwiv(){
+      if (swivList ==0){
+        postContainer.text("No Post currently Found")
+
+      }else {
+        //swivpost exits,perse and display them
+      $.each(swivList, function(key, value){
+      var swivKey = key;
+      if(value.parent){
+        attachPost(value, false, true)
+      }else{
+        attachPost(value);
+      }
+    
+
+      
+        })
+      }
+    }   
+
+    function fecthPost(url){
+      var fetchUrl;
+      if (!url){
+        fetchUrl = initialURL
+      }else {
+        fetchUrl=url
+      }
+      $.ajax({
+      url: fetchUrl,
+      data: {
+      "q":query
+      },
+      method: 'GET',
+      success: function(data){
+        swivList= data.results;
+        if(data.next){
+          nextPostUrl = data.next;
+        }else{
+            $("#loadmore").css("display", "none")
+        }
+    
+      //console.log(data)
+    
+        perseSwiv()
+        updateHashLink()
+        
+      },
+      error: function(data){
+        console.log('error')
+        console.log(data)
+      }
+    })
+
+    }
+
+    function fecthSingle(fecthOneId){
+      var fetchDetailUrl = '/api/swivapp/' + fecthOneId + '/'
+      $.ajax({
+      url: fetchDetailUrl,
+      method: 'GET',
+      success: function(data){
+        console.log(data)
+        swivList= data.results
+        // if(data.next){
+        //   nextPostUrl = data.next;
+        // }else{
+        //     $("#loadmore").css("display", "none")
+        // }
+    
+      //console.log(data)
+    
+        perseSwiv()
+        updateHashLink()
+        
+      },
+      error: function(data){
+        console.log('error')
+        console.log(data)
+      }
+    })
+
+    }
+    if(fecthOneId){
+      fecthSingle(fecthOneId)
+    }else{
+       fecthPost()
+    }
+   
+    $("#loadmore").click(function(event){
+      event.preventDefault()
+      if(nextPostUrl){
+        fecthPost(nextPostUrl)
+      }
+    })
+
+    var charStart= 500;
+    var charsCurrent =0;
+    $(".post-form").append("<span class='swivpostleft' style='margin-left:20px'>" + charStart + "</span>" )
+    $(".post-form textarea").keyup(function(event){
+      var postValue =$(this).val()
+      charsCurrent = charStart - postValue.length;
+      var spanChars =$(this).parent().parent().parent().find("span.swivpostleft")
+      spanChars.text(charsCurrent)
+      if(charsCurrent > 0){
+        spanChars.removeClass("red-color")
+        spanChars.removeClass("grey-color")
+        //remove class
+
+      }else if (charsCurrent ==0){
+        spanChars.removeClass("red-color")
+        spanChars.addClass("grey-color")
+        //add gray class
+
+      }else if (charsCurrent < 0) {
+        spanChars.removeClass("grey-color")
+        spanChars.addClass("red-color")
+        //add red class
+
+      }
+    })
+    
+$(".post-form").submit(function(event){
+
+  event.preventDefault()
+  var this_ = $(this)
+  //console.log(event)
+  var formData = this_.serialize()
+  if (charsCurrent >= 0) {
+  $.ajax({
+      url: "/api/swivapp/create/",
+      data: formData,
+      method: 'POST',
+      success: function(data){
+        this_.find("input[type=text], textarea").val(" ")
+        attachPost(data,true)
+        updateHashLink()
+         $("#commentmodel").modal("hide")              
+      },
+      error: function(data){
+        console.log('error')
+        console.log(data.statusText)
+        console.log(data.status)
+      }
+    })
+
+ }else {
+  console.log("cannot send, post to long")
+ }
+ })
+
+}
+    </script>
+    {% block script %}{% endblock script %}
+    <script type="text/javascript">
+      $(document).ready(function(){
+        var typingTimer;
+        var doneInterval = 500;
+        var searchInput  = $("#navbar-search-form input[type=text]")
+
+        searchInput.keyup(function(){
+          searchQuery = $(this).val()
+          
+          clearTimeout(typingTimer)
+          typingTimer= setTimeout(doneSaerchTyping, doneInterval)
+        })
+
+        searchInput.keydown(function(event){
+          clearTimeout(typingTimer)
+        })
+    
+    function doneSaerchTyping(){
+      if(searchQuery){
+        var url = '/search/?q=' + searchQuery
+        document.location.href = url;   
+           }
+    }
+      })
+
+    </script>
+    <!-- Include all compiled plugins (below), or include individual files as needed -->
+    <script src="{% static 'js/bootstrap.min.js' %}"></script>
+   <!--  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>-->
+  </body>
+</html>

@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+ {% block script %}
+	<script>
+		$(document).ready(function(){
+		loadPostContainer('swiv-container')
+		}); //add {{object.id}})   
+	
+	</script>
+ {% endblock script %}
+
+{% block content %}
+<div class="row">
+	<div class="col-sm-3" style="background-color: yellow;">
+		<h4>{{ object.user}}	</h4>
+</div>
+<div class="col-sm-9">
+	<div id='swiv-container'>
+
+	</div>
+	
+</div>
+{% endblock content %}

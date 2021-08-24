@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %} {{block.super}} | create Swiv{% endblock title %}
+{% block content %}
+<div class="row">
+	<div class="col-sm-6 col-sm-offset-3">
+		<h1>Create Swiv</h1>
+		{% include "swiv/form.html" with form=form btn_title="swiv" %}
+</div>
+</div>
+{% endblock content %}
